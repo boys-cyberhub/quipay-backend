@@ -440,7 +440,7 @@ employersRouter.post(
     }
 
     const verification = await verifyBusinessRegistration(req.body);
-    const stellarAddress = req.body.stellarAddress as string;
+    const stellarAddress = req.body.stellarAddress as string | undefined;
     const contactEmail = req.body.contactEmail as string | undefined;
 
     // If this Quipay account has no employer row linked yet, check for a
@@ -476,7 +476,7 @@ employersRouter.post(
       employer,
       status: employer.verification_status,
       chain: {
-        stellarAddress,
+        stellarAddress: stellarAddress ?? null,
         // Populated by the indexer once streams/vault data exist on Stellar;
         // the Arc (EVM) lookups that used to fill these are frozen.
         existingStreams: 0,
@@ -526,6 +526,7 @@ employersRouter.get(
     const result = await query<{
       worker_address: string;
       quipay_id: string | null;
+      email: string | null;
       full_name: string;
       job_title: string;
       department: string | null;
@@ -537,6 +538,7 @@ employersRouter.get(
       `SELECT
          ep.worker_address,
          a.quipay_id,
+         COALESCE(a.email, ep.work_email) AS email,
          ep.full_name,
          ep.job_title,
          ep.department,

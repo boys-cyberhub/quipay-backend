@@ -869,7 +869,7 @@ export const upsertEmployerVerification = async (params: {
   countryCode: string;
   contactName?: string;
   contactEmail?: string;
-  stellarAddress: string;
+  stellarAddress?: string;
   verificationStatus: EmployerVerificationStatus;
   verificationReason: string | null;
   verificationMetadata: Record<string, unknown>;
@@ -915,8 +915,9 @@ export const upsertEmployerVerification = async (params: {
       params.contactName ?? null,
       params.contactEmail ?? null,
       // Stellar addresses are canonically uppercase — store verbatim, a
-      // lowercased G... address is unusable for on-chain calls.
-      params.stellarAddress,
+      // lowercased G... address is unusable for on-chain calls. May be null
+      // when the employer onboards with email login and links a wallet later.
+      params.stellarAddress ?? null,
       params.verificationStatus,
       params.verificationReason,
       params.verificationMetadata,
@@ -2194,11 +2195,15 @@ export const getAccountByQuipayId = async (
        a.id AS account_id,
        a.quipay_id,
        a.email,
-       COALESCE(w.wallet_stellar, e.stellar_address) AS wallet_stellar,
-       COALESCE(w.wallet_base, e.wallet_base)        AS wallet_base
+       -- account_wallets is the authoritative source (Privy-provisioned);
+       -- fall back to legacy workers/employers columns.
+       COALESCE(aws.address, w.wallet_stellar, e.stellar_address) AS wallet_stellar,
+       COALESCE(awa.address, w.wallet_base,   e.wallet_base)      AS wallet_base
      FROM accounts a
      LEFT JOIN workers   w ON w.account_id = a.id
      LEFT JOIN employers e ON e.account_id = a.id
+     LEFT JOIN account_wallets aws ON aws.account_id = a.id AND aws.chain = 'stellar'
+     LEFT JOIN account_wallets awa ON awa.account_id = a.id AND awa.chain = 'arc'
      WHERE a.quipay_id = $1
      LIMIT 1`,
     [quipayId],
@@ -2239,7 +2244,7 @@ export const linkLegacyEmployerToAccount = async (
 ): Promise<void> => {
   if (!getPool()) return;
   await query(
-    `UPDATE employers SET account_id = $1 WHERE employer_id = $2`,
+    `UPDATE employers SET account_id = $1 WHERE LOWER(employer_id) = LOWER($2)`,
     [accountId, employerId],
   );
 };
@@ -2263,5 +2268,40 @@ export const updateAccountEmail = async (
   await query(
     `UPDATE accounts SET email = $1, updated_at = NOW() WHERE id = $2`,
     [email, accountId],
+  );
+};
+
+/**
+ * Backfills the Stellar address onto this account's employer and/or worker
+ * rows when their embedded wallet is linked. Onboarding is wallet-optional, so
+ * an employer row can exist with a null stellar_address until the Privy wallet
+ * is provisioned — this heals that gap so invites/roster (which key on the
+ * employer's stellar address) work. Only fills nulls; never overwrites.
+ */
+export const backfillStellarAddressForAccount = async (
+  accountId: number,
+  stellarAddress: string,
+): Promise<void> => {
+  if (!getPool()) return;
+  // Match the employer either by its account_id link or by its employer_id
+  // equalling this account's quipay_id (case-insensitive) — the latter heals
+  // rows whose account_id link never got set. Fills nulls only; also sets the
+  // account_id link if it's missing.
+  await query(
+    `UPDATE employers e
+        SET stellar_address = COALESCE(NULLIF(e.stellar_address, ''), $1),
+            account_id = COALESCE(e.account_id, $2),
+            updated_at = NOW()
+       FROM accounts a
+      WHERE a.id = $2
+        AND (e.account_id = $2 OR LOWER(e.employer_id) = LOWER(a.quipay_id))`,
+    [stellarAddress, accountId],
+  );
+  await query(
+    `UPDATE workers
+        SET wallet_stellar = $1
+      WHERE account_id = $2
+        AND (wallet_stellar IS NULL OR wallet_stellar = '')`,
+    [stellarAddress, accountId],
   );
 };

@@ -10,10 +10,13 @@ export const employerOnboardingSchema = z.object({
     .transform((value) => value.toUpperCase()),
   contactName: z.string().trim().min(2).max(120).optional(),
   contactEmail: z.string().trim().email().max(320).optional(),
+  // Optional — an employer can complete KYB with email login alone and link
+  // a wallet later. If supplied it must still be a canonical Stellar address.
   stellarAddress: z
     .string()
     .trim()
-    .regex(/^G[A-Z2-7]{55}$/, "Must be a valid Stellar address (G...)"),
+    .regex(/^G[A-Z2-7]{55}$/, "Must be a valid Stellar address (G...)")
+    .optional(),
 });
 
 export const employerTreasuryDepositSchema = z.object({
