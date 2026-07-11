@@ -13,7 +13,7 @@ export const employerOnboardingSchema = z.object({
   stellarAddress: z
     .string()
     .trim()
-    .regex(/^G[A-Z2-7]{55}$/, "Must be a valid Stellar public key (G...)"),
+    .regex(/^G[A-Z2-7]{55}$/, "Must be a valid Stellar address (G...)"),
 });
 
 export const employerTreasuryDepositSchema = z.object({
@@ -21,7 +21,21 @@ export const employerTreasuryDepositSchema = z.object({
   token: z.string().trim().min(2).max(20).default("USDC"),
 });
 
+export const workerInviteSchema = z.object({
+  candidateQuipayId: z
+    .string()
+    .trim()
+    .regex(/^QP\d+$/i, "Must be a valid QP ID (e.g. QP100000042)")
+    .transform((value) => value.toUpperCase()),
+  jobTitle: z.string().trim().min(2).max(120),
+  description: z.string().trim().max(2000).optional(),
+  payAmount: z.coerce.number().positive(),
+  payToken: z.string().trim().min(2).max(20).default("USDC"),
+  durationDays: z.coerce.number().int().positive().max(3650),
+});
+
 export type EmployerOnboardingInput = z.infer<typeof employerOnboardingSchema>;
 export type EmployerTreasuryDepositInput = z.infer<
   typeof employerTreasuryDepositSchema
 >;
+export type WorkerInviteInput = z.infer<typeof workerInviteSchema>;
