@@ -7,6 +7,7 @@
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "start": "node dist/index.js",
     "build": "tsc",
+    "lint": "tsc --noEmit",
     "test": "jest --testPathIgnorePatterns=integration",
     "test:explain-analyze": "jest --testPathPatterns=explain-analyze --passWithNoTests",
     "test:watch": "jest --watch",
