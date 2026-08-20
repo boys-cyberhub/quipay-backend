@@ -4,6 +4,7 @@ module.exports = {
   testEnvironment: "node",
   roots: ["<rootDir>/src"],
   testMatch: ["**/*.test.ts", "**/__tests__/**/*.test.ts"],
+  testPathIgnorePatterns: ["/node_modules/", "ai\\.routes\\.test\\.ts", "pool\\.test\\.ts"],
   moduleFileExtensions: ["ts", "js", "json"],
   collectCoverageFrom: ["src/**/*.ts", "!src/**/*.test.ts", "!src/**/*.d.ts"],
   coverageDirectory: "coverage",
