@@ -108,11 +108,9 @@ employersRouter.use(
     if (err.code === "23505") {
       const constraint = err.constraint || "";
       if (constraint.includes("pkey") || constraint.includes("employer_id")) {
-        return res
-          .status(409)
-          .json({
-            error: "Employer with this Stellar address already exists.",
-          });
+        return res.status(409).json({
+          error: "Employer with this Stellar address already exists.",
+        });
       }
       if (constraint.includes("email")) {
         return res
@@ -123,11 +121,9 @@ employersRouter.use(
         constraint.includes("organization_name") ||
         constraint.includes("business_name")
       ) {
-        return res
-          .status(409)
-          .json({
-            error: "Employer with this organization name already exists.",
-          });
+        return res.status(409).json({
+          error: "Employer with this organization name already exists.",
+        });
       }
       return res
         .status(409)
