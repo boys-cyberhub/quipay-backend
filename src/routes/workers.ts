@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { requirePrivyAuth } from "../middleware/privyAuth";
 import { getWorkerStreamsBase, getStreamBase } from "../services/baseChain";
-import { db } from "../db/pool";
+import { getPool } from "../db/pool";
 import { logger } from "../logger";
 
 export const workersRouter = Router();
@@ -19,7 +19,9 @@ workersRouter.get("/me/streams", async (req, res) => {
     const privyId = req.privyUser!.sub;
 
     // Lookup worker's on-chain addresses from DB
-    const worker = await db.query(
+    const pool = getPool();
+    if (!pool) { res.status(503).json({ error: "Database not available" }); return; }
+    const worker = await pool.query(
       `SELECT wallet_stellar, wallet_base FROM workers WHERE privy_id = $1 LIMIT 1`,
       [privyId],
     );
@@ -34,7 +36,7 @@ workersRouter.get("/me/streams", async (req, res) => {
 
     // ── Stellar streams (from synced DB) ──────────────────────────────────
     const stellarStreams = wallet_stellar
-      ? await db.query(
+      ? await pool.query(
           `SELECT stream_id, employer_address, worker_address, token,
                   rate_per_second, start_ts, end_ts, cliff_ts,
                   total_withdrawn, status, chain
@@ -113,7 +115,9 @@ workersRouter.get("/me/streams", async (req, res) => {
 workersRouter.get("/me/balance", async (req, res) => {
   try {
     const privyId = req.privyUser!.sub;
-    const worker = await db.query(
+    const pool = getPool();
+    if (!pool) { res.status(503).json({ error: "Database not available" }); return; }
+    const worker = await pool.query(
       `SELECT wallet_stellar FROM workers WHERE privy_id = $1 LIMIT 1`,
       [privyId],
     );
@@ -126,7 +130,7 @@ workersRouter.get("/me/balance", async (req, res) => {
     const { wallet_stellar } = worker.rows[0];
     const now = Math.floor(Date.now() / 1000);
 
-    const streams = await db.query(
+    const streams = await pool.query(
       `SELECT rate_per_second, start_ts, end_ts, total_withdrawn
        FROM payroll_streams
        WHERE worker_address = $1 AND status = 'active'`,
@@ -167,8 +171,10 @@ workersRouter.post("/me/register", async (req, res) => {
   try {
     const privyId = req.privyUser!.sub;
     const { walletStellar, walletBase, email } = req.body;
+    const pool = getPool();
+    if (!pool) { res.status(503).json({ error: "Database not available" }); return; }
 
-    await db.query(
+    await pool.query(
       `INSERT INTO workers (privy_id, email, wallet_stellar, wallet_base, created_at)
        VALUES ($1, $2, $3, $4, NOW())
        ON CONFLICT (privy_id) DO UPDATE
