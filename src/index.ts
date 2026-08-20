@@ -25,7 +25,10 @@ import { streamsRouter } from "./routes/streams";
 import { payslipsRouter } from "./routes/payslips";
 import { brandingRouter } from "./routes/branding";
 import { workersRouter } from "./routes/workers";
+import { crossChainRouter } from "./routes/crossChain";
 import { keyRotationScheduler } from "./services/keyRotationScheduler";
+import { startAttestationPoller, stopAttestationPoller } from "./services/attestationPoller";
+import { startCCTPIndexer, stopCCTPIndexer } from "./services/cctpIndexer";
 import {
   initWebSocketServer,
   shutdownWebSocketServer,
@@ -189,6 +192,7 @@ app.use("/api/v1/workers", workersRouter);
 app.use("/api/workers", payslipsRouter);
 app.use("/api", payslipsRouter); // For /api/verify-signature
 app.use("/api/employers", brandingRouter);
+app.use("/api/cross-chain", crossChainRouter);
 
 // Start time for uptime calculation
 const startTime = Date.now();
@@ -410,6 +414,8 @@ async function main() {
     startScheduler();
     startMonitor();
     startPayrollReportScheduler();
+    startAttestationPoller();
+    startCCTPIndexer();
 
     const rotationEnabled = process.env.KEY_ROTATION_ENABLED === "true";
     if (rotationEnabled) {
@@ -479,6 +485,20 @@ async function main() {
         console.log("[Backend] Syncer stopped");
       } catch (err) {
         console.error("[Backend] Failed to stop syncer:", err);
+      }
+
+      try {
+        stopAttestationPoller();
+        console.log("[Backend] Attestation poller stopped");
+      } catch (err) {
+        console.error("[Backend] Failed to stop attestation poller:", err);
+      }
+
+      try {
+        stopCCTPIndexer();
+        console.log("[Backend] CCTP indexer stopped");
+      } catch (err) {
+        console.error("[Backend] Failed to stop CCTP indexer:", err);
       }
 
       try {
