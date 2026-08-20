@@ -21,7 +21,7 @@ workersRouter.get("/me/streams", async (req, res) => {
     // Lookup worker's on-chain addresses from DB
     const worker = await db.query(
       `SELECT wallet_stellar, wallet_base FROM workers WHERE privy_id = $1 LIMIT 1`,
-      [privyId]
+      [privyId],
     );
 
     if (!worker.rows.length) {
@@ -40,49 +40,51 @@ workersRouter.get("/me/streams", async (req, res) => {
                   total_withdrawn, status, chain
            FROM payroll_streams
            WHERE worker_address = $1 AND status = 'active'`,
-          [wallet_stellar]
+          [wallet_stellar],
         )
       : { rows: [] };
 
     const stellarFormatted = stellarStreams.rows.map((s: any) => {
       const elapsed = Math.max(0, now - s.start_ts);
-      const vested  = elapsed * s.rate_per_second;
+      const vested = elapsed * s.rate_per_second;
       const available = Math.max(0, vested - (s.total_withdrawn ?? 0));
       return {
-        streamId:       s.stream_id,
-        chain:          "stellar",
-        employer:       s.employer_address,
-        ratePerSecond:  s.rate_per_second,
-        startTs:        s.start_ts,
-        endTs:          s.end_ts,
-        cliffTs:        s.cliff_ts,
-        available:      parseFloat(available.toFixed(6)),
-        token:          "USDC",
-        status:         s.status,
+        streamId: s.stream_id,
+        chain: "stellar",
+        employer: s.employer_address,
+        ratePerSecond: s.rate_per_second,
+        startTs: s.start_ts,
+        endTs: s.end_ts,
+        cliffTs: s.cliff_ts,
+        available: parseFloat(available.toFixed(6)),
+        token: "USDC",
+        status: s.status,
       };
     });
 
     // ── Base streams (live from chain) ────────────────────────────────────
     let baseFormatted: any[] = [];
     if (wallet_base) {
-      const baseStreamIds = await getWorkerStreamsBase(wallet_base as `0x${string}`);
+      const baseStreamIds = await getWorkerStreamsBase(
+        wallet_base as `0x${string}`,
+      );
       const baseDetails = await Promise.all(
-        baseStreamIds.map(id => getStreamBase(id as `0x${string}`))
+        baseStreamIds.map((id) => getStreamBase(id as `0x${string}`)),
       );
       baseFormatted = baseDetails
         .filter(Boolean)
         .filter((s: any) => !s.cancelled)
         .map((s: any) => ({
-          streamId:      s.streamId,
-          chain:         "base",
-          employer:      s.employer,
+          streamId: s.streamId,
+          chain: "base",
+          employer: s.employer,
           ratePerSecond: s.ratePerSecond,
-          startTs:       s.startTs,
-          endTs:         s.endTs,
-          cliffTs:       s.cliffTs,
-          available:     s.available,
-          token:         "USDC",
-          status:        "active",
+          startTs: s.startTs,
+          endTs: s.endTs,
+          cliffTs: s.cliffTs,
+          available: s.available,
+          token: "USDC",
+          status: "active",
         }));
     }
 
@@ -90,11 +92,11 @@ workersRouter.get("/me/streams", async (req, res) => {
     const totalAvailable = allStreams.reduce((sum, s) => sum + s.available, 0);
 
     res.json({
-      streams:            allStreams,
+      streams: allStreams,
       totalAvailableUSDC: parseFloat(totalAvailable.toFixed(6)),
-      chains:             {
+      chains: {
         stellar: stellarFormatted.length,
-        base:    baseFormatted.length,
+        base: baseFormatted.length,
       },
     });
   } catch (err) {
@@ -111,9 +113,9 @@ workersRouter.get("/me/streams", async (req, res) => {
 workersRouter.get("/me/balance", async (req, res) => {
   try {
     const privyId = req.privyUser!.sub;
-    const worker  = await db.query(
+    const worker = await db.query(
       `SELECT wallet_stellar FROM workers WHERE privy_id = $1 LIMIT 1`,
-      [privyId]
+      [privyId],
     );
 
     if (!worker.rows.length) {
@@ -128,28 +130,28 @@ workersRouter.get("/me/balance", async (req, res) => {
       `SELECT rate_per_second, start_ts, end_ts, total_withdrawn
        FROM payroll_streams
        WHERE worker_address = $1 AND status = 'active'`,
-      [wallet_stellar]
+      [wallet_stellar],
     );
 
-    let streaming   = 0;
-    let available   = 0;
-    let withdrawn   = 0;
+    let streaming = 0;
+    let available = 0;
+    let withdrawn = 0;
 
     for (const s of streams.rows) {
-      const elapsed  = Math.max(0, now - s.start_ts);
-      const vested   = elapsed * s.rate_per_second;
-      const w        = s.total_withdrawn ?? 0;
-      available     += Math.max(0, vested - w);
-      streaming     += s.rate_per_second;   // current streaming rate
-      withdrawn     += w;
+      const elapsed = Math.max(0, now - s.start_ts);
+      const vested = elapsed * s.rate_per_second;
+      const w = s.total_withdrawn ?? 0;
+      available += Math.max(0, vested - w);
+      streaming += s.rate_per_second; // current streaming rate
+      withdrawn += w;
     }
 
     res.json({
-      available:  parseFloat(available.toFixed(6)),
-      streaming:  parseFloat(streaming.toFixed(8)),  // per second
-      withdrawn:  parseFloat(withdrawn.toFixed(6)),
-      currency:   "USDC",
-      updatedAt:  now,
+      available: parseFloat(available.toFixed(6)),
+      streaming: parseFloat(streaming.toFixed(8)), // per second
+      withdrawn: parseFloat(withdrawn.toFixed(6)),
+      currency: "USDC",
+      updatedAt: now,
     });
   } catch (err) {
     logger.error({ err }, "Failed to fetch worker balance");
@@ -173,7 +175,7 @@ workersRouter.post("/me/register", async (req, res) => {
          SET wallet_stellar = COALESCE($3, workers.wallet_stellar),
              wallet_base    = COALESCE($4, workers.wallet_base),
              email          = COALESCE($2, workers.email)`,
-      [privyId, email ?? null, walletStellar ?? null, walletBase ?? null]
+      [privyId, email ?? null, walletStellar ?? null, walletBase ?? null],
     );
 
     res.json({ success: true });
