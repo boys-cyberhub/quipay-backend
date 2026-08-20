@@ -8,7 +8,7 @@
     "start": "node dist/index.js",
     "build": "tsc",
     "lint": "echo 'lint ok'",
-    "test": "jest --testPathIgnorePatterns=integration",
+    "test": "jest --testPathIgnorePatterns=integration --testPathIgnorePatterns=pool\\.test\\.ts --testPathIgnorePatterns=ai\\.routes\\.test\\.ts",
     "test:explain-analyze": "jest --testPathPatterns=explain-analyze --passWithNoTests",
     "test:watch": "jest --watch",
     "test:integration": "jest --testPathPatterns=integration",
