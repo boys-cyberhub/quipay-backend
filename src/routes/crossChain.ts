@@ -39,6 +39,9 @@ const attestationRequestBody = z.object({
   messageHash: z
     .string()
     .min(1, { message: "messageHash is required" }),
+  sourceChain: z
+    .string()
+    .min(1, { message: "sourceChain is required" }),
 });
 
 // ── Routes ────────────────────────────────────────────────────────────────────
@@ -191,9 +194,14 @@ crossChainRouter.post(
     }
 
     try {
-      const { messageHash } = req.body as z.infer<typeof attestationRequestBody>;
+      const { messageHash, sourceChain } = req.body as z.infer<typeof attestationRequestBody>;
 
-      const result = await fetchAttestation(messageHash);
+      const chain = getChainConfig(sourceChain);
+      if (!chain) {
+        return res.status(400).json({ ok: false, error: `Unsupported chain: ${sourceChain}` });
+      }
+
+      const result = await fetchAttestation(messageHash, chain.domain);
 
       if (result.status === "complete" && result.attestation) {
         // Update the transfer record if it exists
@@ -202,6 +210,7 @@ crossChainRouter.post(
           .set({
             status: "attested",
             attestation: result.attestation,
+            cctpMessage: result.message || null,
             updatedAt: new Date(),
           })
           .where(eq(crossChainTransfers.messageHash, messageHash));
@@ -373,7 +382,9 @@ crossChainRouter.get(
 crossChainRouter.get(
   "/employer/:address/spend",
   standardRateLimiter,
-  async (req: Request, res: Response): Promise<any> => {
+  authenticateRequest,
+  requireUser,
+  async (req: AuthenticatedRequest, res: Response): Promise<any> => {
     const db = getDb();
     if (!db) {
       return res.status(503).json({ ok: false, error: "Database not available" });
@@ -381,6 +392,11 @@ crossChainRouter.get(
 
     try {
       const address = req.params.address as string;
+
+      // Ownership check — only the employer can view their own spend
+      if (req.user!.id !== address) {
+        return res.status(403).json({ ok: false, error: "Access denied" });
+      }
       const cacheKey = `cct:spend:${address}`;
       const cached = globalCache.get(cacheKey);
       if (cached) {
@@ -427,6 +443,7 @@ function formatTransfer(t: typeof crossChainTransfers.$inferSelect) {
     sourceTxHash: t.sourceTxHash,
     destinationTxHash: t.destinationTxHash,
     messageHash: t.messageHash,
+    cctpMessage: t.cctpMessage,
     status: t.status,
     errorMessage: t.errorMessage,
     createdAt: t.createdAt,

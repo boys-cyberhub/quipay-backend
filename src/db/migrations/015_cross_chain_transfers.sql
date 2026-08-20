@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS cross_chain_transfers (
   destination_tx_hash VARCHAR(128),
   message_hash VARCHAR(128),              -- CCTP message hash for attestation lookup
   attestation TEXT,                       -- Circle's attestation signature
+  cctp_message TEXT,                      -- Encoded CCTP payload for receiveMessage on destination
   status VARCHAR(32) DEFAULT 'pending',   -- 'pending' | 'attested' | 'completed' | 'failed'
   error_message TEXT,
   created_at TIMESTAMPTZ DEFAULT now(),

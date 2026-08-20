@@ -465,6 +465,7 @@ export const crossChainTransfers = pgTable(
     destinationTxHash: text("destination_tx_hash"),
     messageHash: text("message_hash"),
     attestation: text("attestation"),
+    cctpMessage: text("cctp_message"),
     status: text("status").notNull().default("pending"), // 'pending' | 'attested' | 'completed' | 'failed'
     errorMessage: text("error_message"),
     createdAt: timestamp("created_at", { withTimezone: true })

@@ -1,7 +1,7 @@
 import { getDb } from "../db/pool";
 import { crossChainTransfers } from "../db/schema";
 import { eq, and, isNotNull } from "drizzle-orm";
-import { fetchAttestation } from "./cctpService";
+import { fetchAttestation, getChainConfig } from "./cctpService";
 import { CCTP_POLL_INTERVAL_MS } from "../config/cctp";
 import { emitCrossChainEvent } from "../websocket/server";
 import { logger } from "../logger";
@@ -39,7 +39,13 @@ async function pollCycle(): Promise<void> {
 
     for (const transfer of pending) {
       try {
-        const result = await fetchAttestation(transfer.messageHash!);
+        const chain = getChainConfig(transfer.sourceChain);
+        if (!chain) {
+          logger.warn({ transferId: transfer.id, sourceChain: transfer.sourceChain }, "Unknown source chain, skipping");
+          continue;
+        }
+
+        const result = await fetchAttestation(transfer.sourceTxHash, chain.domain);
 
         if (result.status === "complete" && result.attestation) {
           await db
@@ -47,6 +53,7 @@ async function pollCycle(): Promise<void> {
             .set({
               status: "attested",
               attestation: result.attestation,
+              cctpMessage: result.message || null,
               updatedAt: new Date(),
             })
             .where(eq(crossChainTransfers.id, transfer.id));

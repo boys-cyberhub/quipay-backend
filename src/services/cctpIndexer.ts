@@ -65,12 +65,23 @@ function initChainClients(): void {
 /**
  * Parse a CCTP MessageSent event to extract message details.
  * The message bytes contain source/destination domains, nonce, amount, and recipient.
+ *
+ * CCTP message format (v0):
+ *   version (4 bytes) | srcDomain (4) | dstDomain (4) | nonce (8) |
+ *   sender (32) | recipient (32) | destCaller (32) | amount (32) | messageBody (var)
  */
 function parseCCTPMessage(
   messageBytes: `0x${string}`,
 ): { messageHash: string; amount: string } | null {
   try {
     const hex = messageBytes.slice(2); // remove 0x
+
+    // Check version — only v0 is supported today
+    const version = parseInt(hex.slice(0, 8), 16);
+    if (version !== 0) {
+      logger.warn({ version }, "CCTP indexer: unsupported message version, skipping");
+      return null;
+    }
 
     // Amount is at byte offset 77 (chars 154-218) in the CCTP message
     // version(4) + srcDomain(4) + dstDomain(4) + nonce(16) + sender(64) + recipient(64) = 156 chars

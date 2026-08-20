@@ -17,11 +17,15 @@ export interface AttestationResult {
  * Fetch the attestation for a CCTP burn transaction from Circle's Iris API.
  * The attestation is a signed message that proves the burn happened on the
  * source chain and authorizes the mint on the destination chain.
+ *
+ * @param txHash - The burn transaction hash on the source chain
+ * @param sourceDomain - CCTP domain ID of the source chain (0=Eth, 3=Arb, 6=Base, 2=Op)
  */
 export async function fetchAttestation(
-  messageHash: string,
+  txHash: string,
+  sourceDomain: number,
 ): Promise<AttestationResult> {
-  const url = `${CCTP_ATTESTATION_BASE}/v2/messages/0?transactionHash=${messageHash}`;
+  const url = `${CCTP_ATTESTATION_BASE}/v2/messages/${sourceDomain}?transactionHash=${txHash}`;
 
   const res = await fetch(url, {
     headers: { "Content-Type": "application/json" },
@@ -54,15 +58,16 @@ export async function fetchAttestation(
  * CCTP attestations typically resolve in 1-5 minutes on testnet.
  */
 export async function pollForAttestation(
-  messageHash: string,
+  txHash: string,
+  sourceDomain: number,
 ): Promise<{ attestation: string; message: string }> {
   for (let attempt = 1; attempt <= CCTP_MAX_POLL_ATTEMPTS; attempt++) {
     try {
-      const result = await fetchAttestation(messageHash);
+      const result = await fetchAttestation(txHash, sourceDomain);
 
       if (result.status === "complete" && result.attestation) {
         logger.info(
-          { messageHash, attempt },
+          { txHash, attempt },
           "CCTP attestation received",
         );
         return {
@@ -72,7 +77,7 @@ export async function pollForAttestation(
       }
     } catch (err: any) {
       logger.warn(
-        { messageHash, attempt, err: err.message },
+        { txHash, attempt, err: err.message },
         "Attestation poll failed, retrying",
       );
     }
