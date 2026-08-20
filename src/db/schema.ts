@@ -454,7 +454,9 @@ export const streamAuditLog = pgTable(
 export const crossChainTransfers = pgTable(
   "cross_chain_transfers",
   {
-    id: text("id").primaryKey().default(sql`gen_random_uuid()`),
+    id: text("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
     employerAddress: text("employer_address"),
     workerAddress: text("worker_address"),
     direction: text("direction").notNull(), // 'deposit' | 'withdrawal'

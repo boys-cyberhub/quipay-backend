@@ -66,10 +66,7 @@ export async function pollForAttestation(
       const result = await fetchAttestation(txHash, sourceDomain);
 
       if (result.status === "complete" && result.attestation) {
-        logger.info(
-          { txHash, attempt },
-          "CCTP attestation received",
-        );
+        logger.info({ txHash, attempt }, "CCTP attestation received");
         return {
           attestation: result.attestation,
           message: result.message!,

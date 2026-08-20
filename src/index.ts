@@ -27,7 +27,10 @@ import { brandingRouter } from "./routes/branding";
 import { workersRouter } from "./routes/workers";
 import { crossChainRouter } from "./routes/crossChain";
 import { keyRotationScheduler } from "./services/keyRotationScheduler";
-import { startAttestationPoller, stopAttestationPoller } from "./services/attestationPoller";
+import {
+  startAttestationPoller,
+  stopAttestationPoller,
+} from "./services/attestationPoller";
 import { startCCTPIndexer, stopCCTPIndexer } from "./services/cctpIndexer";
 import {
   initWebSocketServer,
@@ -187,7 +190,7 @@ app.use("/stellar", stellarRouter);
 app.use("/reports", reportsRouter);
 app.use("/streams", streamsRouter);
 app.use("/api/streams", streamsRouter);
-app.use("/workers", workersRouter);       // mobile app worker API
+app.use("/workers", workersRouter); // mobile app worker API
 app.use("/api/v1/workers", workersRouter);
 app.use("/api/workers", payslipsRouter);
 app.use("/api", payslipsRouter); // For /api/verify-signature

@@ -162,7 +162,9 @@ export const emitCrossChainEvent = (
   data: any,
 ): void => {
   if (!io) {
-    console.warn("[WebSocket] Server not initialized, cannot emit cross-chain event");
+    console.warn(
+      "[WebSocket] Server not initialized, cannot emit cross-chain event",
+    );
     return;
   }
 
@@ -186,7 +188,9 @@ export const emitCrossChainEvent = (
   // Also emit to all admins
   io.to("admin").emit("cross_chain:event", event);
 
-  console.log(`[WebSocket] Emitted cross-chain event ${eventType} for transfer ${transferId}`);
+  console.log(
+    `[WebSocket] Emitted cross-chain event ${eventType} for transfer ${transferId}`,
+  );
 };
 
 /**

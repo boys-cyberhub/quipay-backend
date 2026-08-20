@@ -36,12 +36,8 @@ const transferIdParam = z.object({
 });
 
 const attestationRequestBody = z.object({
-  messageHash: z
-    .string()
-    .min(1, { message: "messageHash is required" }),
-  sourceChain: z
-    .string()
-    .min(1, { message: "sourceChain is required" }),
+  messageHash: z.string().min(1, { message: "messageHash is required" }),
+  sourceChain: z.string().min(1, { message: "sourceChain is required" }),
 });
 
 // ── Routes ────────────────────────────────────────────────────────────────────
@@ -69,11 +65,14 @@ crossChainRouter.get(
   async (req: AuthenticatedRequest, res: Response): Promise<any> => {
     const db = getDb();
     if (!db) {
-      return res.status(503).json({ ok: false, error: "Database not available" });
+      return res
+        .status(503)
+        .json({ ok: false, error: "Database not available" });
     }
 
     try {
-      const { direction, status, sourceChain, page, limit } = req.query as z.infer<typeof listTransfersQuery>;
+      const { direction, status, sourceChain, page, limit } =
+        req.query as z.infer<typeof listTransfersQuery>;
       const userId = req.user!.id;
       const offset = (page - 1) * limit;
 
@@ -122,8 +121,13 @@ crossChainRouter.get(
         },
       });
     } catch (err: any) {
-      logger.error({ err: err.message }, "Failed to list cross-chain transfers");
-      return res.status(500).json({ ok: false, error: "Failed to list transfers" });
+      logger.error(
+        { err: err.message },
+        "Failed to list cross-chain transfers",
+      );
+      return res
+        .status(500)
+        .json({ ok: false, error: "Failed to list transfers" });
     }
   },
 );
@@ -141,7 +145,9 @@ crossChainRouter.get(
   async (req: AuthenticatedRequest, res: Response): Promise<any> => {
     const db = getDb();
     if (!db) {
-      return res.status(503).json({ ok: false, error: "Database not available" });
+      return res
+        .status(503)
+        .json({ ok: false, error: "Database not available" });
     }
 
     try {
@@ -171,7 +177,9 @@ crossChainRouter.get(
       return res.json({ ok: true, data: formatTransfer(transfer) });
     } catch (err: any) {
       logger.error({ err: err.message }, "Failed to get cross-chain transfer");
-      return res.status(500).json({ ok: false, error: "Failed to get transfer" });
+      return res
+        .status(500)
+        .json({ ok: false, error: "Failed to get transfer" });
     }
   },
 );
@@ -190,15 +198,21 @@ crossChainRouter.post(
   async (req: AuthenticatedRequest, res: Response): Promise<any> => {
     const db = getDb();
     if (!db) {
-      return res.status(503).json({ ok: false, error: "Database not available" });
+      return res
+        .status(503)
+        .json({ ok: false, error: "Database not available" });
     }
 
     try {
-      const { messageHash, sourceChain } = req.body as z.infer<typeof attestationRequestBody>;
+      const { messageHash, sourceChain } = req.body as z.infer<
+        typeof attestationRequestBody
+      >;
 
       const chain = getChainConfig(sourceChain);
       if (!chain) {
-        return res.status(400).json({ ok: false, error: `Unsupported chain: ${sourceChain}` });
+        return res
+          .status(400)
+          .json({ ok: false, error: `Unsupported chain: ${sourceChain}` });
       }
 
       const result = await fetchAttestation(messageHash, chain.domain);
@@ -232,7 +246,9 @@ crossChainRouter.post(
       });
     } catch (err: any) {
       logger.error({ err: err.message }, "Failed to request attestation");
-      return res.status(500).json({ ok: false, error: "Failed to request attestation" });
+      return res
+        .status(500)
+        .json({ ok: false, error: "Failed to request attestation" });
     }
   },
 );
@@ -248,7 +264,9 @@ crossChainRouter.get(
   async (req: Request, res: Response): Promise<any> => {
     const db = getDb();
     if (!db) {
-      return res.status(503).json({ ok: false, error: "Database not available" });
+      return res
+        .status(503)
+        .json({ ok: false, error: "Database not available" });
     }
 
     try {
@@ -283,7 +301,9 @@ crossChainRouter.get(
       });
     } catch (err: any) {
       logger.error({ err: err.message }, "Failed to get cross-chain volume");
-      return res.status(500).json({ ok: false, error: "Failed to get volume data" });
+      return res
+        .status(500)
+        .json({ ok: false, error: "Failed to get volume data" });
     }
   },
 );
@@ -298,7 +318,9 @@ crossChainRouter.get(
   async (_req: Request, res: Response): Promise<any> => {
     const db = getDb();
     if (!db) {
-      return res.status(503).json({ ok: false, error: "Database not available" });
+      return res
+        .status(503)
+        .json({ ok: false, error: "Database not available" });
     }
 
     try {
@@ -322,10 +344,14 @@ crossChainRouter.get(
 
       globalCache.set(cacheKey, result.rows[0], 60 * 1000);
 
-      return res.set("X-Cache", "MISS").json({ ok: true, data: result.rows[0] });
+      return res
+        .set("X-Cache", "MISS")
+        .json({ ok: true, data: result.rows[0] });
     } catch (err: any) {
       logger.error({ err: err.message }, "Failed to get cross-chain summary");
-      return res.status(500).json({ ok: false, error: "Failed to get summary" });
+      return res
+        .status(500)
+        .json({ ok: false, error: "Failed to get summary" });
     }
   },
 );
@@ -340,7 +366,9 @@ crossChainRouter.get(
   async (_req: Request, res: Response): Promise<any> => {
     const db = getDb();
     if (!db) {
-      return res.status(503).json({ ok: false, error: "Database not available" });
+      return res
+        .status(503)
+        .json({ ok: false, error: "Database not available" });
     }
 
     try {
@@ -370,7 +398,9 @@ crossChainRouter.get(
       return res.set("X-Cache", "MISS").json({ ok: true, data: result });
     } catch (err: any) {
       logger.error({ err: err.message }, "Failed to get deposits by chain");
-      return res.status(500).json({ ok: false, error: "Failed to get deposits by chain" });
+      return res
+        .status(500)
+        .json({ ok: false, error: "Failed to get deposits by chain" });
     }
   },
 );
@@ -387,7 +417,9 @@ crossChainRouter.get(
   async (req: AuthenticatedRequest, res: Response): Promise<any> => {
     const db = getDb();
     if (!db) {
-      return res.status(503).json({ ok: false, error: "Database not available" });
+      return res
+        .status(503)
+        .json({ ok: false, error: "Database not available" });
     }
 
     try {
@@ -417,14 +449,19 @@ crossChainRouter.get(
             eq(crossChainTransfers.status, "completed"),
           ),
         )
-        .groupBy(crossChainTransfers.sourceChain, crossChainTransfers.direction);
+        .groupBy(
+          crossChainTransfers.sourceChain,
+          crossChainTransfers.direction,
+        );
 
       globalCache.set(cacheKey, result, 60 * 1000); // 1 min TTL
 
       return res.set("X-Cache", "MISS").json({ ok: true, data: result });
     } catch (err: any) {
       logger.error({ err: err.message }, "Failed to get cross-chain spend");
-      return res.status(500).json({ ok: false, error: "Failed to get spend data" });
+      return res
+        .status(500)
+        .json({ ok: false, error: "Failed to get spend data" });
     }
   },
 );

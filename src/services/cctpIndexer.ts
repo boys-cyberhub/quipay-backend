@@ -79,7 +79,10 @@ function parseCCTPMessage(
     // Check version — only v0 is supported today
     const version = parseInt(hex.slice(0, 8), 16);
     if (version !== 0) {
-      logger.warn({ version }, "CCTP indexer: unsupported message version, skipping");
+      logger.warn(
+        { version },
+        "CCTP indexer: unsupported message version, skipping",
+      );
       return null;
     }
 

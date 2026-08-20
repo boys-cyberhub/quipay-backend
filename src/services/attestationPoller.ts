@@ -35,17 +35,26 @@ async function pollCycle(): Promise<void> {
 
     if (pending.length === 0) return;
 
-    logger.info({ count: pending.length }, "Polling attestations for pending transfers");
+    logger.info(
+      { count: pending.length },
+      "Polling attestations for pending transfers",
+    );
 
     for (const transfer of pending) {
       try {
         const chain = getChainConfig(transfer.sourceChain);
         if (!chain) {
-          logger.warn({ transferId: transfer.id, sourceChain: transfer.sourceChain }, "Unknown source chain, skipping");
+          logger.warn(
+            { transferId: transfer.id, sourceChain: transfer.sourceChain },
+            "Unknown source chain, skipping",
+          );
           continue;
         }
 
-        const result = await fetchAttestation(transfer.sourceTxHash, chain.domain);
+        const result = await fetchAttestation(
+          transfer.sourceTxHash,
+          chain.domain,
+        );
 
         if (result.status === "complete" && result.attestation) {
           await db
@@ -104,7 +113,10 @@ export function startAttestationPoller(): void {
   }
 
   stopping = false;
-  logger.info({ intervalMs: CCTP_POLL_INTERVAL_MS }, "Starting attestation poller");
+  logger.info(
+    { intervalMs: CCTP_POLL_INTERVAL_MS },
+    "Starting attestation poller",
+  );
 
   // Run first cycle after a short delay to let DB initialize
   setTimeout(async () => {

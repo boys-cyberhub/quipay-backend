@@ -66,5 +66,4 @@ export const CCTP_MAX_POLL_ATTEMPTS = 40; // 10 minutes total
 export const SUPPORTED_EVM_CHAINS = Object.keys(CCTP_SUPPORTED_CHAINS);
 
 /** Stellar CCTP token contract address (for receiving mints) */
-export const STELLAR_CCTP_CONTRACT =
-  process.env.STELLAR_CCTP_CONTRACT || "";
+export const STELLAR_CCTP_CONTRACT = process.env.STELLAR_CCTP_CONTRACT || "";
