@@ -20,7 +20,10 @@ workersRouter.get("/me/streams", async (req, res) => {
 
     // Lookup worker's on-chain addresses from DB
     const pool = getPool();
-    if (!pool) { res.status(503).json({ error: "Database not available" }); return; }
+    if (!pool) {
+      res.status(503).json({ error: "Database not available" });
+      return;
+    }
     const worker = await pool.query(
       `SELECT wallet_stellar, wallet_base FROM workers WHERE privy_id = $1 LIMIT 1`,
       [privyId],
@@ -116,7 +119,10 @@ workersRouter.get("/me/balance", async (req, res) => {
   try {
     const privyId = req.privyUser!.sub;
     const pool = getPool();
-    if (!pool) { res.status(503).json({ error: "Database not available" }); return; }
+    if (!pool) {
+      res.status(503).json({ error: "Database not available" });
+      return;
+    }
     const worker = await pool.query(
       `SELECT wallet_stellar FROM workers WHERE privy_id = $1 LIMIT 1`,
       [privyId],
@@ -172,7 +178,10 @@ workersRouter.post("/me/register", async (req, res) => {
     const privyId = req.privyUser!.sub;
     const { walletStellar, walletBase, email } = req.body;
     const pool = getPool();
-    if (!pool) { res.status(503).json({ error: "Database not available" }); return; }
+    if (!pool) {
+      res.status(503).json({ error: "Database not available" });
+      return;
+    }
 
     await pool.query(
       `INSERT INTO workers (privy_id, email, wallet_stellar, wallet_base, created_at)

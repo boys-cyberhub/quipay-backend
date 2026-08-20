@@ -212,10 +212,16 @@ const createConfiguredPool = (
     const endTimer = pgPoolCheckoutDuration.startTimer();
     if (args.length > 0 && typeof args[0] === "function") {
       const cb = args[0];
-      return originalConnect((err: Error | undefined, client: PoolClient | undefined, done: (release?: any) => void) => {
-        endTimer();
-        cb(err, client, done);
-      });
+      return originalConnect(
+        (
+          err: Error | undefined,
+          client: PoolClient | undefined,
+          done: (release?: any) => void,
+        ) => {
+          endTimer();
+          cb(err, client, done);
+        },
+      );
     }
     return originalConnect()
       .then((client: PoolClient) => {
